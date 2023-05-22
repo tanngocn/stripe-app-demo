@@ -19,15 +19,27 @@ export default function CheckoutForm({ secret }) {
       return;
     }
     stripe.retrievePaymentIntent(clientSecret).then(({ paymentIntent }) => {
+      console.log(paymentIntent);
       switch (paymentIntent.status) {
         case "succeeded":
           setMessage("Payment succeeded!");
+          console.log(paymentIntent);
+          fetch(`/card-details/${paymentIntent.payment_method}`, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          });
+
           break;
         case "processing":
           setMessage("Your payment is processing.");
           break;
         case "requires_payment_method":
           setMessage("Your payment was not successful, please try again.");
+          fetch("/update", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ method: paymentIntent.payment_method, id: paymentIntent.id }),
+          });
           break;
         default:
           setMessage("Something went wrong.");
@@ -36,18 +48,18 @@ export default function CheckoutForm({ secret }) {
     });
   }, [stripe]);
 
-  useEffect(() => {
-    const paymentIntentId = "pi_3NAa8IGxZvIUVH3x1MXNA3NO";
-    if (elements) {
-      var paymentElement = elements.getElement("payment");
-      console.log(paymentElement);
-    }
+  // useEffect(() => {
+  //   const paymentIntentId = "pi_3NAa8IGxZvIUVH3x1MXNA3NO";
+  //   if (elements) {
+  //     var paymentElement = elements.getElement("payment");
+  //     console.log(paymentElement);
+  //   }
 
-    fetch(`/payment/${paymentIntentId}`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    }).then((res) => res.json());
-  }, []);
+  //   fetch(`/payment/${paymentIntentId}`, {
+  //     method: "GET",
+  //     headers: { "Content-Type": "application/json" },
+  //   }).then((res) => res.json());
+  // }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

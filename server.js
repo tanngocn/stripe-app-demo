@@ -14,7 +14,7 @@ const calculateOrderAmount = (items) => {
   // people from directly manipulating the amount on the client
   return 1400;
 };
-// register
+
 app.get("/payment/:id", async (req, res) => {
   const { id } = req.params;
   try {
@@ -43,7 +43,7 @@ app.post("/register", async (req, res) => {
       email,
     });
     if (customer) {
-      req.customer = customer;
+      console.log(customer.id);
       res.status(200).send({ message: "create customer success", code: "200" });
     }
   } catch (e) {
@@ -51,15 +51,47 @@ app.post("/register", async (req, res) => {
   }
 });
 
+app.get("/card-details/:id", async (req, res) => {
+  try {
+    const paymentMethod = await stripe.paymentMethods.retrieve(req.params.id);
+
+    if (paymentMethod.type === "card") {
+      const card = paymentMethod.card;
+      console.log("Card Brand:", card.brand);
+      console.log("Card Last 4 Digits:", card.last4);
+      console.log("Card Expiration Month:", card.exp_month);
+      console.log("Card Expiration Year:", card.exp_year);
+      // Handle card information
+    } else {
+      console.log("Payment method is not a card.");
+      // Handle other types of payment methods if necessary
+    }
+  } catch (error) {
+    console.log("Error retrieving payment method:", error.message);
+    // Handle error
+  }
+});
+app.post("/update", async (req, res) => {
+  const { method, id } = req.body;
+  console.log(method);
+  try {
+    const paymentIntent = await stripe.paymentIntents.update(id, { payment_method: method });
+
+    console.log(paymentIntent);
+  } catch (e) {
+    console.log(e);
+  }
+});
+
 app.post("/create-payment-intent", async (req, res) => {
   const { items } = req.body;
-  const customer = await stripe.customers.create();
   // Create a PaymentIntent with the order amount and currency
+
   // console.log(customer);
   const paymentIntent = await stripe.paymentIntents.create({
     amount: calculateOrderAmount(items),
     currency: "usd",
-    customer: customer.id,
+    customer: req?.customer?.id,
     automatic_payment_methods: {
       enabled: true,
     },
