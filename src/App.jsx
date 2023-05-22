@@ -34,7 +34,7 @@ export default function App() {
       <RegisterForm />
       {clientSecret && (
         <Elements options={options} stripe={stripePromise}>
-          <CheckoutForm />
+          <CheckoutForm secret={clientSecret} />
         </Elements>
       )}
     </div>

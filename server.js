@@ -15,6 +15,27 @@ const calculateOrderAmount = (items) => {
   return 1400;
 };
 // register
+app.get("/payment/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const paymentIntent = await stripe.paymentIntents.retrieve(id);
+    const card = paymentIntent.charges.data[0].payment_method_details.card;
+
+    // await stripe.paymentIntents.update(id, { customer: "cus_NwT3exUeRAnBFE" });
+    // console.log(paymentIntent.charges.data);
+    // console.log("Card:", card);
+    // Access the desired card details
+    // console.log("Card Brand:", card.brand);
+    // console.log("Card Last 4 Digits:", card.last4);
+    // console.log("Card Expiration Month:", card.exp_month);
+    // console.log("Card Expiration Year:", card.exp_year);
+    // Handle card information
+    res.status(200);
+  } catch (error) {
+    console.log("Error retrieving Payment Intent:", error.message);
+    // Handle error
+  }
+});
 app.post("/register", async (req, res) => {
   const { email } = req.body;
   try {
@@ -32,17 +53,19 @@ app.post("/register", async (req, res) => {
 
 app.post("/create-payment-intent", async (req, res) => {
   const { items } = req.body;
-
+  const customer = await stripe.customers.create();
   // Create a PaymentIntent with the order amount and currency
-
+  // console.log(customer);
   const paymentIntent = await stripe.paymentIntents.create({
     amount: calculateOrderAmount(items),
     currency: "usd",
+    customer: customer.id,
     automatic_payment_methods: {
       enabled: true,
     },
-    // setup_future_usage: "on_session",
+    setup_future_usage: "off_session",
   });
+  // const card = paymentIntent.charges.data[0].payment_method_details.card;
 
   res.send({
     clientSecret: paymentIntent.client_secret,
